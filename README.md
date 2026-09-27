@@ -181,7 +181,7 @@ The project follows a modular, single-responsibility design. Each stage of the R
 
 | Module | Responsibility |
 |---|---|
-| `src/config.py` | Loads `.env`, centralizes all tunable parameters. |
+| `src/config.py` | Loads Streamlit Secrets (Cloud) or `.env` (local); centralizes all tunable parameters. |
 | `src/document_loader.py` | Extracts text per PDF page with PyMuPDF; cleans whitespace; skips empty pages. |
 | `src/chunker.py` | Splits text into overlapping chunks while preserving document name and page number. |
 | `src/embeddings.py` | Wraps Sentence Transformers; lazy-loads and caches the model; normalizes vectors. |
@@ -277,23 +277,57 @@ cp .env.example .env
 
 ## Environment Configuration
 
-All secrets and tunable parameters are managed through `.env`. The file is listed in `.gitignore` and is never committed.
+Secrets are never hardcoded. Kas-AI loads them in this order:
 
-### `.env.example`
+1. **Streamlit Secrets** (`st.secrets`) — used on Streamlit Community Cloud.
+2. **Environment / `.env`** — used for local development.
+
+### Local: `.env`
+
+```bash
+# Windows
+copy .env.example .env
+
+# macOS / Linux
+cp .env.example .env
+```
 
 ```env
-LLM_API_KEY=
+LLM_API_KEY=sk-guts-...
 LLM_BASE_URL=https://api.gutsai.id/v1
 LLM_MODEL=laguna-s2.1
-
-# Guts AI also provides: nemotron-3-super
-# LLM_MODEL=nemotron-3-super
 
 # Optional overrides
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 CHUNK_SIZE=500
 CHUNK_OVERLAP=100
 TOP_K=5
+```
+
+### Streamlit Community Cloud: Secrets
+
+`.env` is **not** available on Streamlit Cloud (and must never be committed). Configure Secrets instead:
+
+1. Open your app on [share.streamlit.io](https://share.streamlit.io) → **Settings → Secrets**.
+2. Paste the following (same format as `.streamlit/secrets.toml.example`):
+
+```toml
+LLM_API_KEY = "sk-guts-..."
+LLM_BASE_URL = "https://api.gutsai.id/v1"
+LLM_MODEL = "laguna-s2.1"
+
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+CHUNK_SIZE = 500
+CHUNK_OVERLAP = 100
+TOP_K = 5
+```
+
+3. Click **Save**, then **Reboot app**.
+
+If `LLM_API_KEY` is missing in Secrets, the chat will show:
+
+```text
+⚠️ LLM_API_KEY belum diatur. ... Untuk Streamlit Cloud: isi Secrets (Settings → Secrets) ...
 ```
 
 ### Configuration Reference
@@ -308,11 +342,13 @@ TOP_K=5
 | `CHUNK_OVERLAP` | `100` | Overlap between consecutive chunks. |
 | `TOP_K` | `5` | Number of chunks retrieved per question. |
 
-> **Security note:** no API key is hardcoded anywhere in the source code. The key is read at runtime exclusively from `.env`.
+> **Security note:** no API key is hardcoded in the source. Local `.env` and `.streamlit/secrets.toml` are gitignored. Only templates (`.env.example`, `.streamlit/secrets.toml.example`) are committed.
 
 ---
 
 ## Running the Application
+
+### Local
 
 ```bash
 streamlit run app.py
@@ -323,6 +359,13 @@ Streamlit will open a browser tab automatically. If not, visit:
 ```text
 http://localhost:8501
 ```
+
+### Streamlit Community Cloud
+
+1. Push this repository to GitHub.
+2. Create a new app on [share.streamlit.io](https://share.streamlit.io) pointing to `app.py`.
+3. Fill **Settings → Secrets** as shown above.
+4. Wait for the first boot (embedding model download can take 1–2 minutes).
 
 ---
 
@@ -404,7 +447,7 @@ The system prompt enforces these rules:
 | Scenario | Behavior |
 |---|---|
 | Empty PDF / scanned PDF without text | User sees a clear message explaining OCR is required. |
-| Missing `LLM_API_KEY` | User is told to copy `.env.example` to `.env` and fill in the key. |
+| Missing `LLM_API_KEY` | User is told to fill `.env` (local) or Streamlit Secrets (Cloud). |
 | LLM API failure | User sees a descriptive error with the underlying cause. |
 | Embedding model failure | User sees the model name and likely cause. |
 | FAISS error | User sees a clear runtime error message. |
@@ -498,8 +541,10 @@ kas-ai/
 │   ├── __init__.py
 │   └── test_pipeline.py      # Unit tests
 ├── requirements.txt
-├── .env.example              # Environment template (safe to commit)
-├── .gitignore                # Excludes .env, venv, caches, data
+├── .env.example                       # Local env template (safe to commit)
+├── .streamlit/
+│   └── secrets.toml.example           # Streamlit Cloud Secrets template
+├── .gitignore                         # Excludes .env, secrets.toml, venv, caches
 └── README.md
 ```
 

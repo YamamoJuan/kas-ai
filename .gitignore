@@ -20,6 +20,8 @@ Thumbs.db
 
 # Streamlit
 .streamlit/secrets.toml
+# Kecuali template-nya
+!.streamlit/secrets.toml.example
 
 # Local task notes
 prompt.md

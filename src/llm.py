@@ -27,7 +27,9 @@ class LLMClient:
 
         if not self.api_key:
             raise ValueError(
-                "LLM_API_KEY belum diatur. Salin .env.example menjadi .env lalu isi API key."
+                "LLM_API_KEY belum diatur. "
+                "Untuk local: salin .env.example menjadi .env lalu isi API key. "
+                "Untuk Streamlit Cloud: isi Secrets (Settings → Secrets) dengan key LLM_API_KEY."
             )
         if not self.model:
             raise ValueError("LLM_MODEL belum diatur di .env")
