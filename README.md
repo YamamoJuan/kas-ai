@@ -248,7 +248,7 @@ The application is not bound to a single provider. Any OpenAI-compatible endpoin
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/kas-ai.git
+git clone https://github.com/YamamoJuan/kas-ai.git
 cd kas-ai
 
 # 2. Create a virtual environment
